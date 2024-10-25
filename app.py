@@ -54,21 +54,20 @@ if "chat_history" not in st.session_state:
 
 # Function to format messages for display
 def format_message(content):
-    """Format long messages with line breaks and bullet points."""
-    formatted_content = content.replace("\n", "<br>")  # Add line breaks
+    """Format long messages with line breaks."""
+    formatted_content = content.replace("\n", "<br>")  # Add line breaks for readability
     return f"<div style='font-size: 16px; font-family: Arial, sans-serif;'>{formatted_content}</div>"
 
-# Display chat history with styling
+# Display chat history on the left side
 def display_chat_history():
     for message in st.session_state.chat_history:
         role = "User" if message["role"] == "user" else "Assistant"
-        alignment = "left" if role == "User" else "right"
         color = "#4CAF50" if role == "User" else "#FF5733"
         timestamp = message.get("time", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        
+
         st.markdown(
             f"""
-            <div style='text-align: {alignment}; margin-bottom: 10px;'>
+            <div style='text-align: left; margin-bottom: 10px;'>
                 <span style='color: {color}; font-weight: bold; font-size: 18px;'>{role} ({timestamp}):</span>
                 {format_message(message["content"])}
             </div>
@@ -112,7 +111,7 @@ if uploaded_file:
 # User input section with callback on submission
 st.text_input("You:", key="user_input", on_change=handle_user_input)
 
-# Display chat history with custom styling
+# Display chat history on the left side with custom styling
 st.write("---")
 st.subheader("Chat History")
 display_chat_history()
