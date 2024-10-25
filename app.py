@@ -4,7 +4,6 @@ from groq import Groq
 from PyPDF2 import PdfReader
 import pandas as pd
 from docx import Document
-from datetime import datetime
 
 # Set up the Streamlit app configuration
 st.set_page_config(page_title="AI Chatbot", layout="wide")
@@ -19,7 +18,6 @@ client = Groq(api_key=api_key)
 
 # Function to get chatbot response from Groq API
 def chat_with_groq(messages):
-    # Prepare the payload without timestamps for the API
     api_messages = [{"role": msg["role"], "content": msg["content"]} for msg in messages]
     
     try:
@@ -54,8 +52,7 @@ if "chat_history" not in st.session_state:
 
 # Function to format messages for display
 def format_message(content):
-    """Format long messages with line breaks."""
-    formatted_content = content.replace("\n", "<br>")  # Add line breaks for readability
+    formatted_content = content.replace("\n", "<br>")
     return f"<div style='font-size: 16px; font-family: Arial, sans-serif;'>{formatted_content}</div>"
 
 # Display chat history on the left side
@@ -63,12 +60,11 @@ def display_chat_history():
     for message in st.session_state.chat_history:
         role = "User" if message["role"] == "user" else "Assistant"
         color = "#4CAF50" if role == "User" else "#FF5733"
-        timestamp = message.get("time", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
         st.markdown(
             f"""
             <div style='text-align: left; margin-bottom: 10px;'>
-                <span style='color: {color}; font-weight: bold; font-size: 18px;'>{role} ({timestamp}):</span>
+                <span style='color: {color}; font-weight: bold; font-size: 18px;'>{role}:</span>
                 {format_message(message["content"])}
             </div>
             """,
@@ -79,22 +75,11 @@ def display_chat_history():
 def handle_user_input():
     user_message = st.session_state.user_input
     if user_message:
-        # Append user message with timestamp for display
-        st.session_state.chat_history.append({
-            "role": "user", 
-            "content": user_message, 
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        })
+        st.session_state.chat_history.append({"role": "user", "content": user_message})
 
-        # Get chatbot response and append with timestamp for display
         response = chat_with_groq(st.session_state.chat_history)
-        st.session_state.chat_history.append({
-            "role": "assistant", 
-            "content": response, 
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        })
+        st.session_state.chat_history.append({"role": "assistant", "content": response})
 
-        # Clear the input field after submission
         st.session_state.user_input = ""
 
 # Streamlit UI layout
@@ -111,7 +96,7 @@ if uploaded_file:
 # User input section with callback on submission
 st.text_input("You:", key="user_input", on_change=handle_user_input)
 
-# Display chat history on the left side with custom styling
+# Display chat history with custom styling
 st.write("---")
 st.subheader("Chat History")
 display_chat_history()
