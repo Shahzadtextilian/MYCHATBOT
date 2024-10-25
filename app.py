@@ -6,7 +6,7 @@ import pandas as pd
 from docx import Document
 
 # Set up the Streamlit app configuration
-st.set_page_config(page_title="Groq AI Chatbot", layout="wide")
+st.set_page_config(page_title="MY AI-Powered Chatbot", layout="wide")
 
 # Initialize the Groq client
 api_key = os.getenv("GROQ_API_KEY")
@@ -66,8 +66,8 @@ def handle_user_input():
         # Clear the input field after submission
         st.session_state.user_input = ""
 
-st.title("🤖 Groq-powered AI Chatbot")
-st.subheader("Chat with an intelligent assistant powered by Groq's LLM!")
+st.title("MY AI-powered Chatbot")
+st.subheader("Chat with an intelligent assistant LLM!")
 
 uploaded_file = st.file_uploader("Upload a PDF, Excel, or Word file", type=["pdf", "xlsx", "csv", "docx"])
 
