@@ -19,9 +19,12 @@ client = Groq(api_key=api_key)
 
 # Function to get chatbot response from Groq API
 def chat_with_groq(messages):
+    # Prepare the payload without timestamps for the API
+    api_messages = [{"role": msg["role"], "content": msg["content"]} for msg in messages]
+    
     try:
         response = client.chat.completions.create(
-            messages=messages,
+            messages=api_messages,
             model="llama3-8b-8192",
         )
         return response.choices[0].message.content
@@ -73,14 +76,14 @@ def display_chat_history():
 def handle_user_input():
     user_message = st.session_state.user_input
     if user_message:
-        # Append user message with timestamp
+        # Append user message with timestamp for display
         st.session_state.chat_history.append({
             "role": "user", 
             "content": user_message, 
             "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         })
 
-        # Get chatbot response and append with timestamp
+        # Get chatbot response and append with timestamp for display
         response = chat_with_groq(st.session_state.chat_history)
         st.session_state.chat_history.append({
             "role": "assistant", 
