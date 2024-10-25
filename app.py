@@ -6,7 +6,7 @@ import pandas as pd
 from docx import Document
 
 # Set up the Streamlit app configuration
-st.set_page_config(page_title="AI Chatbot", layout="wide")
+st.set_page_config(page_title="Groq AI Chatbot", layout="wide")
 
 # Initialize the Groq client
 api_key = os.getenv("GROQ_API_KEY")
@@ -83,7 +83,7 @@ def handle_user_input():
         st.session_state.user_input = ""
 
 # Streamlit UI layout
-st.title("AI Chatbot")
+st.title("🤖 Groq-powered AI Chatbot")
 st.subheader("Chat with an intelligent assistant powered by Groq's LLM!")
 
 # File uploader section
@@ -100,3 +100,14 @@ st.text_input("You:", key="user_input", on_change=handle_user_input)
 st.write("---")
 st.subheader("Chat History")
 display_chat_history()
+
+# Add footer at the bottom
+st.markdown(
+    """
+    <hr style="border: none; border-top: 1px solid #eee; margin-top: 20px;" />
+    <div style="text-align: center; font-size: 14px; color: #888;">
+        Chatbot Developed by <b>Shahzad Mahmood</b>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
