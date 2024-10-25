@@ -84,7 +84,7 @@ def handle_user_input():
 
 # Streamlit UI layout
 st.title("AI Chatbot")
-st.subheader("Chat with an intelligent assistant powered by Groq's LLM!")
+st.subheader("Chat with an intelligent assistant")
 
 # File uploader section
 uploaded_file = st.file_uploader("Upload a PDF, Excel, or Word file", type=["pdf", "xlsx", "csv", "docx"])
