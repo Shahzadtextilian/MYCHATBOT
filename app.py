@@ -6,7 +6,7 @@ import pandas as pd
 from docx import Document
 
 # Set up the Streamlit app configuration
-st.set_page_config(page_title="My AI Chatbot", layout="wide")
+st.set_page_config(page_title="Groq AI Chatbot", layout="wide")
 
 # Initialize the Groq client
 api_key = os.getenv("GROQ_API_KEY")
@@ -16,7 +16,6 @@ if not api_key:
 
 client = Groq(api_key=api_key)
 
-# Helper function to communicate with Groq API
 def chat_with_groq(messages):
     try:
         response = client.chat.completions.create(
@@ -28,7 +27,6 @@ def chat_with_groq(messages):
         st.error(f"An error occurred: {e}")
         return "Sorry, I couldn't process your request."
 
-# Helper function to process uploaded files
 def process_uploaded_file(file):
     if file.name.endswith(".pdf"):
         reader = PdfReader(file)
@@ -44,7 +42,6 @@ def process_uploaded_file(file):
     else:
         return "Unsupported file type."
 
-# Initialize chat history in session state
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
@@ -54,32 +51,32 @@ def display_chat_history():
         role = "User" if message["role"] == "user" else "Assistant"
         st.markdown(f"**{role}:** {message['content']}")
 
-# Streamlit UI
-st.title("My AI-Powered Chatbot")
+def handle_user_input():
+    user_message = st.session_state.user_input
+    if user_message:
+        # Append user input to chat history
+        st.session_state.chat_history.append({"role": "user", "content": user_message})
+
+        # Get response from Groq API
+        response = chat_with_groq(st.session_state.chat_history)
+
+        # Append the response to chat history
+        st.session_state.chat_history.append({"role": "assistant", "content": response})
+
+        # Clear the input field after submission
+        st.session_state.user_input = ""
+
+st.title("🤖 Groq-powered AI Chatbot")
 st.subheader("Chat with an intelligent assistant powered by Groq's LLM!")
 
-# File uploader section
 uploaded_file = st.file_uploader("Upload a PDF, Excel, or Word file", type=["pdf", "xlsx", "csv", "docx"])
 
 if uploaded_file:
     file_content = process_uploaded_file(uploaded_file)
     st.text_area("File Content", file_content, height=200)
 
-# User input section
-user_input = st.text_input("You:", key="user_input")
-
-if user_input:
-    # Append user input to chat history
-    st.session_state.chat_history.append({"role": "user", "content": user_input})
-
-    # Get response from Groq API
-    response = chat_with_groq(st.session_state.chat_history)
-
-    # Append the response to chat history
-    st.session_state.chat_history.append({"role": "assistant", "content": response})
-
-    # Clear the input field
-    st.session_state.user_input = ""
+# Text input for user messages
+st.text_input("You:", key="user_input", on_change=handle_user_input)
 
 # Display chat history
 st.write("---")
