@@ -7,7 +7,7 @@ from docx import Document
 from datetime import datetime
 
 # Set up the Streamlit app configuration
-st.set_page_config(page_title="MY AI Chatbot", layout="wide")
+st.set_page_config(page_title="Groq AI Chatbot", layout="wide")
 
 # Initialize the Groq client
 api_key = os.getenv("GROQ_API_KEY")
@@ -52,6 +52,12 @@ def process_uploaded_file(file):
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
+# Function to format messages for display
+def format_message(content):
+    """Format long messages with line breaks and bullet points."""
+    formatted_content = content.replace("\n", "<br>")  # Add line breaks
+    return f"<div style='font-size: 16px; font-family: Arial, sans-serif;'>{formatted_content}</div>"
+
 # Display chat history with styling
 def display_chat_history():
     for message in st.session_state.chat_history:
@@ -64,9 +70,7 @@ def display_chat_history():
             f"""
             <div style='text-align: {alignment}; margin-bottom: 10px;'>
                 <span style='color: {color}; font-weight: bold; font-size: 18px;'>{role} ({timestamp}):</span>
-                <div style='font-size: 16px; font-family: Arial, sans-serif; margin-top: 5px;'>
-                    {message["content"]}
-                </div>
+                {format_message(message["content"])}
             </div>
             """,
             unsafe_allow_html=True
@@ -95,7 +99,7 @@ def handle_user_input():
         st.session_state.user_input = ""
 
 # Streamlit UI layout
-st.title("MY AI Chatbot")
+st.title("🤖 Groq-powered AI Chatbot")
 st.subheader("Chat with an intelligent assistant powered by Groq's LLM!")
 
 # File uploader section
