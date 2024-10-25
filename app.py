@@ -66,7 +66,7 @@ def handle_user_input():
         # Clear the input field after submission
         st.session_state.user_input = ""
 
-st.title("MY AI-powered Chatbot")
+st.title("MY AI-Powered Chatbot")
 st.subheader("Chat with an intelligent assistant LLM!")
 
 uploaded_file = st.file_uploader("Upload a PDF, Excel, or Word file", type=["pdf", "xlsx", "csv", "docx"])
