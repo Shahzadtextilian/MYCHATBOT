@@ -13,23 +13,28 @@ if not api_key:
 
 client = Groq(api_key=api_key)
 
+# Available Groq models
+GROQ_MODELS = ["llama3-8b-8192", "llama2-7b-4096", "gpt-j-6b", "opt-13b"]
+
+# Initialize chat history and selected model if not already set
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "selected_model" not in st.session_state:
+    st.session_state.selected_model = "llama3-8b-8192"  # Default model
+
 # Function to get chatbot response from Groq API
-def chat_with_groq(messages):
+def chat_with_groq(messages, model):
     api_messages = [{"role": msg["role"], "content": msg["content"]} for msg in messages]
     
     try:
         response = client.chat.completions.create(
             messages=api_messages,
-            model="llama3-8b-8192",
+            model=model,
         )
         return response.choices[0].message.content
     except Exception as e:
         st.error(f"An error occurred: {e}")
         return "Sorry, I couldn't process your request."
-
-# Initialize chat history if not already set
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
 
 # Function to format messages for display
 def format_message(content):
@@ -52,23 +57,37 @@ def display_chat_history():
             unsafe_allow_html=True
         )
 
-# Handle user input
+# Handle user input and submit query
 def handle_user_input():
     user_message = st.session_state.user_input
     if user_message:
         st.session_state.chat_history.append({"role": "user", "content": user_message})
 
-        response = chat_with_groq(st.session_state.chat_history)
+        # Get response from the selected Groq model
+        response = chat_with_groq(st.session_state.chat_history, st.session_state.selected_model)
         st.session_state.chat_history.append({"role": "assistant", "content": response})
 
-        st.session_state.user_input = ""
+        st.session_state.user_input = ""  # Clear input field
 
 # Streamlit UI layout
 st.title("AI Chatbot")
 st.subheader("Chat with an intelligent assistant")
 
-# User input section with callback on submission
-st.text_input("You:", key="user_input", on_change=handle_user_input)
+# Model selection dropdown
+st.selectbox(
+    "Select Model",
+    GROQ_MODELS,
+    index=GROQ_MODELS.index(st.session_state.selected_model),
+    key="selected_model",
+)
+
+# User input section with submit button
+with st.form(key="chat_form"):
+    st.text_input("You:", key="user_input")
+    submit_button = st.form_submit_button(label="Submit")
+
+if submit_button:
+    handle_user_input()
 
 # Display chat history with custom styling
 st.write("---")
