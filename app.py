@@ -1,9 +1,6 @@
 import os
 import streamlit as st
 from groq import Groq
-from PyPDF2 import PdfReader
-import pandas as pd
-from docx import Document
 
 # Set up the Streamlit app configuration
 st.set_page_config(page_title="AI Chatbot", layout="wide")
@@ -29,26 +26,6 @@ def chat_with_groq(messages):
     except Exception as e:
         st.error(f"An error occurred: {e}")
         return "Sorry, I couldn't process your request."
-
-# Function to process uploaded files
-def process_uploaded_file(file):
-    try:
-        if file.name.endswith(".pdf"):
-            reader = PdfReader(file)
-            text = "".join([page.extract_text() or "" for page in reader.pages])
-            return text.strip() or "No readable text found in the PDF."
-        elif file.name.endswith(".xlsx") or file.name.endswith(".csv"):
-            df = pd.read_excel(file) if file.name.endswith(".xlsx") else pd.read_csv(file)
-            return df.to_string()
-        elif file.name.endswith(".docx"):
-            doc = Document(file)
-            text = "\n".join([para.text for para in doc.paragraphs])
-            return text.strip() or "No text found in the Word document."
-        else:
-            return "Unsupported file type."
-    except Exception as e:
-        st.error(f"Failed to process the uploaded file: {e}")
-        return None
 
 # Initialize chat history if not already set
 if "chat_history" not in st.session_state:
@@ -89,18 +66,6 @@ def handle_user_input():
 # Streamlit UI layout
 st.title("AI Chatbot")
 st.subheader("Chat with an intelligent assistant")
-
-# File uploader section
-uploaded_file = st.file_uploader("Upload a PDF, Excel, or Word file", type=["pdf", "xlsx", "csv", "docx"])
-
-if uploaded_file:
-    with st.spinner("Processing file..."):
-        file_content = process_uploaded_file(uploaded_file)
-        
-    if file_content:
-        st.text_area("File Content", file_content, height=200)
-    else:
-        st.warning("The uploaded file could not be processed or is empty.")
 
 # User input section with callback on submission
 st.text_input("You:", key="user_input", on_change=handle_user_input)
