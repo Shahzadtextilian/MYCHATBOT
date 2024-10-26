@@ -21,6 +21,8 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = "llama3-8b-8192"  # Default model
+if "user_input" not in st.session_state:
+    st.session_state.user_input = ""  # Initialize user input
 
 # Function to get chatbot response from Groq API
 def chat_with_groq(messages, model):
@@ -57,7 +59,7 @@ def display_chat_history():
             unsafe_allow_html=True
         )
 
-# Handle user input and submit query
+# Handle user input
 def handle_user_input():
     user_message = st.session_state.user_input
     if user_message:
@@ -67,7 +69,8 @@ def handle_user_input():
         response = chat_with_groq(st.session_state.chat_history, st.session_state.selected_model)
         st.session_state.chat_history.append({"role": "assistant", "content": response})
 
-        st.session_state.user_input = ""  # Clear input field
+        # Clear input field safely
+        st.session_state.user_input = ""  # Reset input after processing
 
 # Streamlit UI layout
 st.title("AI Chatbot")
@@ -81,13 +84,13 @@ st.selectbox(
     key="selected_model",
 )
 
-# User input section with submit button
-with st.form(key="chat_form"):
+# User input section with submit button inside a form
+with st.form(key="chat_form", clear_on_submit=True):
     st.text_input("You:", key="user_input")
     submit_button = st.form_submit_button(label="Submit")
 
 if submit_button:
-    handle_user_input()
+    handle_user_input()  # Handle user input when the form is submitted
 
 # Display chat history with custom styling
 st.write("---")
