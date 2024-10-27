@@ -4,3 +4,5 @@ PyPDF2
 pandas
 openpyxl
 python-docx
+groq-api-client
+python-dotenv
