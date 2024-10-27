@@ -38,21 +38,24 @@ def chat_with_groq(messages, model):
         return "Sorry, I couldn't process your request."
 
 # Function to display chat history with formatting
+# Function to display chat history with proper formatting
 def display_chat_history():
     for message in st.session_state.chat_history:
         role = "User" if message["role"] == "user" else "Assistant"
         color = "#4CAF50" if role == "User" else "#FF5733"
 
-        st.markdown(
-            (
-                f"<div style='text-align: left; margin-bottom: 10px;'>"
-                f"<span style='color: {color}; font-weight: bold; font-size: 18px;'>{role}:</span>"
-                f"<div style='font-size: 16px; font-family: Arial, sans-serif;'>"
-                f"{message['content'].replace('\n', '<br>')}</div>"
-                f"</div>"
-            ),
-            unsafe_allow_html=True
+        # Use concatenation instead of multi-line f-string for better clarity
+        message_html = (
+            f"<div style='text-align: left; margin-bottom: 10px;'>"
+            f"<span style='color: {color}; font-weight: bold; font-size: 18px;'>{role}:</span> "
+            f"<div style='font-size: 16px; font-family: Arial, sans-serif;'>"
+            f"{message['content'].replace('\n', '<br>')}</div>"
+            f"</div>"
         )
+
+        # Display the message
+        st.markdown(message_html, unsafe_allow_html=True)
+
 
 # Function to handle user input and get response
 def handle_user_input():
