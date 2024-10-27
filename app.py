@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # Load API key from Streamlit secrets
-GROQ_API_KEY = st.secrets["groq_api_key"]
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 MODEL_NAME = "llama-3.2-90b-vision-preview"
 API_URL = f"https://api.groq.com/v1/models/{MODEL_NAME}/generate"
 
