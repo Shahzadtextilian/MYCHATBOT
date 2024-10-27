@@ -1,65 +1,48 @@
 import streamlit as st
-from groq import Groq, GroqError
+import requests
 
 # Load API key from Streamlit secrets
-api_key = st.secrets["GROQ_API_KEY"]
+GROQ_API_KEY = st.secrets["groq_api_key"]
+MODEL_NAME = "llama-3.2-90b-vision-preview"
+API_URL = f"https://api.groq.com/v1/models/{MODEL_NAME}/generate"
 
-# Initialize the Groq client with error handling
-try:
-    client = Groq(api_key=api_key)
-except GroqError as e:
-    st.error(f"Failed to connect to the Groq API: {str(e)}")
-    st.stop()
+# Streamlit UI
+st.title("LLaMA 3.2 Chatbot")
+st.subheader("Powered by GROQ API")
 
-# Function to generate responses using the selected model
-def generate_response(prompt, model="llama3-8b-8192"):
+# Initialize chat history if not already present
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+def query_groq_api(prompt):
+    """Send a request to the GROQ API and return the response."""
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "prompt": prompt,
+        "max_tokens": 300,  # Adjust token limit as needed
+    }
     try:
-        response = client.chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
-            model=model,
-        )
-        return response.choices[0].message.content
-    except GroqError as e:
-        return f"Error generating response: {str(e)}"
+        response = requests.post(API_URL, json=data, headers=headers)
+        response.raise_for_status()  # Raise error for bad responses
+        return response.json().get("choices", [{}])[0].get("text", "")
+    except requests.exceptions.RequestException as e:
+        st.error(f"API error: {e}")
+        return "I'm having trouble connecting to the server. Please try again later."
 
-# Streamlit UI Layout
-st.title("AL Power Chatbot with RAG")
+# User input section
+user_input = st.text_input("You:", key="user_input")
 
-# Sidebar for Model Selection
-available_models = ["llama3-70b-8192", "llama3-8b-8192", "llama2-13b-8192"]
-selected_model = st.sidebar.selectbox("Select a Model", available_models)
+if st.button("Send") and user_input:
+    # Send the user's input to the GROQ API
+    bot_response = query_groq_api(user_input)
+    
+    # Update chat history
+    st.session_state.messages.append(("User", user_input))
+    st.session_state.messages.append(("Bot", bot_response))
 
-# File Uploader for Document Uploads
-uploaded_file = st.file_uploader("Upload a PDF, Image, or Text Document", type=["pdf", "png", "jpg", "txt"])
-
-# Function to Process Uploaded Documents
-def process_document(file):
-    if file.type == "application/pdf":
-        import PyPDF2
-        pdf_reader = PyPDF2.PdfReader(file)
-        return "".join([page.extract_text() for page in pdf_reader.pages])
-    elif file.type in ["image/png", "image/jpeg"]:
-        from PIL import Image
-        import pytesseract
-        img = Image.open(file)
-        return pytesseract.image_to_string(img)
-    elif file.type == "text/plain":
-        return file.read().decode("utf-8")
-    else:
-        return "Unsupported file type."
-
-# Handling User Interactions
-if uploaded_file:
-    doc_content = process_document(uploaded_file)
-    st.write("Document Content:", doc_content)
-
-    user_query = st.text_input("Ask a question based on the document:")
-    if st.button("Get Answer"):
-        answer = generate_response(user_query, selected_model)
-        st.write("Answer:", answer)
-else:
-    st.write("No document uploaded. You can still chat with the model.")
-    user_input = st.text_input("Ask anything:")
-    if st.button("Chat"):
-        response = generate_response(user_input, selected_model)
-        st.write("Response:", response)
+# Display chat history
+for user, message in st.session_state.messages:
+    st.write(f"**{user}:** {message}")
