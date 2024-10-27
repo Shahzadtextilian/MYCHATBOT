@@ -3,11 +3,11 @@ import requests
 
 # Load API key from Streamlit secrets
 GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
-MODEL_NAME = "llama-3.2-90b-vision-preview"
+MODEL_NAME = "llama3-70b-8192"
 API_URL = f"https://api.groq.com/v1/models/{MODEL_NAME}/generate"
 
 # Streamlit UI
-st.title("LLaMA 3.2 Chatbot")
+st.title("LLaMA 3 Chatbot")
 st.subheader("Powered by GROQ API")
 
 # Initialize chat history if not already present
