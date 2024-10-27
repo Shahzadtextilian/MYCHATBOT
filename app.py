@@ -1,113 +1,77 @@
 import os
 import streamlit as st
 from groq import Groq
-from PyPDF2 import PdfReader
-import pandas as pd
-from docx import Document
+from dotenv import load_dotenv
 
-# Set up the Streamlit app configuration
-st.set_page_config(page_title="AI Chatbot", layout="wide")
+# Load environment variables
+load_dotenv()
+API_KEY = os.getenv("GROQ_API_KEY")
 
-# Initialize the Groq client
-api_key = os.getenv("GROQ_API_KEY")
-if not api_key:
-    st.error("API key not found. Make sure it's set as 'GROQ_API_KEY' in the environment variables.")
-    st.stop()
+# Initialize Groq client
+client = Groq(api_key=API_KEY)
 
-client = Groq(api_key=api_key)
+# Set available models
+AVAILABLE_MODELS = [
+    "llama3-70b-8192",
+    "llama3-8b-8192",
+    "llama2-13b-8192"
+]
 
-# Function to get chatbot response from Groq API
-def chat_with_groq(messages):
-    api_messages = [{"role": msg["role"], "content": msg["content"]} for msg in messages]
-    
-    try:
-        response = client.chat.completions.create(
-            messages=api_messages,
-            model="llama3-8b-8192",
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
-        return "Sorry, I couldn't process your request."
+# Streamlit app layout
+st.title("AL Power Chatbot with RAG")
+st.sidebar.header("Configuration")
 
-# Function to process uploaded files
-def process_uploaded_file(file):
-    if file.name.endswith(".pdf"):
-        reader = PdfReader(file)
-        text = "".join([page.extract_text() for page in reader.pages])
+# Model selection
+selected_model = st.sidebar.selectbox("Select a Model", AVAILABLE_MODELS)
+
+# File uploader
+uploaded_file = st.file_uploader("Upload a PDF, Image, or Document", type=["pdf", "png", "jpg", "txt"])
+
+def process_document(file):
+    """Processes uploaded document and returns its content."""
+    if file.type == "application/pdf":
+        # Process PDF and extract text
+        import PyPDF2
+        pdf_reader = PyPDF2.PdfReader(file)
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text()
         return text
-    elif file.name.endswith(".xlsx") or file.name.endswith(".csv"):
-        df = pd.read_excel(file) if file.name.endswith(".xlsx") else pd.read_csv(file)
-        return df.to_string()
-    elif file.name.endswith(".docx"):
-        doc = Document(file)
-        text = "\n".join([para.text for para in doc.paragraphs])
-        return text
+    elif file.type in ["image/png", "image/jpeg"]:
+        # Process image using OCR
+        from PIL import Image
+        import pytesseract
+        img = Image.open(file)
+        return pytesseract.image_to_string(img)
+    elif file.type == "text/plain":
+        # Return plain text content
+        return file.read().decode("utf-8")
     else:
         return "Unsupported file type."
 
-# Initialize chat history if not already set
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-
-# Function to format messages for display
-def format_message(content):
-    formatted_content = content.replace("\n", "<br>")
-    return f"<div style='font-size: 16px; font-family: Arial, sans-serif;'>{formatted_content}</div>"
-
-# Display chat history on the left side
-def display_chat_history():
-    for message in st.session_state.chat_history:
-        role = "User" if message["role"] == "user" else "Assistant"
-        color = "#4CAF50" if role == "User" else "#FF5733"
-
-        st.markdown(
-            f"""
-            <div style='text-align: left; margin-bottom: 10px;'>
-                <span style='color: {color}; font-weight: bold; font-size: 18px;'>{role}:</span>
-                {format_message(message["content"])}
-            </div>
-            """,
-            unsafe_allow_html=True
+def generate_response(prompt, model):
+    """Generates a response using the Groq API."""
+    try:
+        response = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model=model,
         )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error generating response: {str(e)}"
 
-# Handle user input
-def handle_user_input():
-    user_message = st.session_state.user_input
-    if user_message:
-        st.session_state.chat_history.append({"role": "user", "content": user_message})
-
-        response = chat_with_groq(st.session_state.chat_history)
-        st.session_state.chat_history.append({"role": "assistant", "content": response})
-
-        st.session_state.user_input = ""
-
-# Streamlit UI layout
-st.title("AI Chatbot")
-st.subheader("Chat with an intelligent assistant")
-
-# File uploader section
-uploaded_file = st.file_uploader("Upload a PDF, Excel, or Word file", type=["pdf", "xlsx", "csv", "docx"])
-
+# Handle user interaction
 if uploaded_file:
-    file_content = process_uploaded_file(uploaded_file)
-    st.text_area("File Content", file_content, height=200)
+    doc_content = process_document(uploaded_file)
+    st.write("Document Content:", doc_content)
 
-# User input section with callback on submission
-st.text_input("You:", key="user_input", on_change=handle_user_input)
-
-# Display chat history with custom styling
-st.write("---")
-st.subheader("Chat History")
-display_chat_history()
-
-# Add footer at the bottom
-st.markdown(
-    """
-    <hr style="border: none; border-top: 1px solid #eee; margin-top: 20px;" />
-    <div style="text-align: center; font-size: 14px; color: #888;">
-        Chatbot Developed by <b>Shahzad Mahmood</b>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+    user_query = st.text_input("Ask a question based on the document:")
+    if st.button("Get Answer"):
+        answer = generate_response(user_query, selected_model)
+        st.write("Answer:", answer)
+else:
+    st.write("No document uploaded. You can still chat with the model.")
+    user_input = st.text_input("Ask anything:")
+    if st.button("Chat"):
+        response = generate_response(user_input, selected_model)
+        st.write("Response:", response)
