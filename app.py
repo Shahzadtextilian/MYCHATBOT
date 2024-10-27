@@ -44,12 +44,13 @@ def display_chat_history():
         color = "#4CAF50" if role == "User" else "#FF5733"
 
         st.markdown(
-            f"""
-            <div style='text-align: left; margin-bottom: 10px;'>
-                <span style='color: {color}; font-weight: bold; font-size: 18px;'>{role}:</span>
-                <div style='font-size: 16px; font-family: Arial, sans-serif;'>{message["content"].replace("\n", "<br>")}</div>
-            </div>
-            """,
+            (
+                f"<div style='text-align: left; margin-bottom: 10px;'>"
+                f"<span style='color: {color}; font-weight: bold; font-size: 18px;'>{role}:</span>"
+                f"<div style='font-size: 16px; font-family: Arial, sans-serif;'>"
+                f"{message['content'].replace('\n', '<br>')}</div>"
+                f"</div>"
+            ),
             unsafe_allow_html=True
         )
 
