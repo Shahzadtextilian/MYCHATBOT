@@ -11,7 +11,7 @@ except GroqError as e:
     st.error(f"Failed to connect to the Groq API: {str(e)}")
     st.stop()
 
-# Define a function to generate a response using the selected model
+# Function to generate responses using the selected model
 def generate_response(prompt, model="llama3-8b-8192"):
     try:
         response = client.chat.completions.create(
@@ -22,23 +22,22 @@ def generate_response(prompt, model="llama3-8b-8192"):
     except GroqError as e:
         return f"Error generating response: {str(e)}"
 
-# Streamlit UI
+# Streamlit UI Layout
 st.title("AL Power Chatbot with RAG")
 
-# Sidebar for model selection
+# Sidebar for Model Selection
 available_models = ["llama3-70b-8192", "llama3-8b-8192", "llama2-13b-8192"]
 selected_model = st.sidebar.selectbox("Select a Model", available_models)
 
-# File uploader to allow document uploads
+# File Uploader for Document Uploads
 uploaded_file = st.file_uploader("Upload a PDF, Image, or Text Document", type=["pdf", "png", "jpg", "txt"])
 
-# Function to process the uploaded document
+# Function to Process Uploaded Documents
 def process_document(file):
     if file.type == "application/pdf":
         import PyPDF2
         pdf_reader = PyPDF2.PdfReader(file)
-        text = "".join([page.extract_text() for page in pdf_reader.pages])
-        return text
+        return "".join([page.extract_text() for page in pdf_reader.pages])
     elif file.type in ["image/png", "image/jpeg"]:
         from PIL import Image
         import pytesseract
@@ -49,7 +48,7 @@ def process_document(file):
     else:
         return "Unsupported file type."
 
-# Handle user interactions
+# Handling User Interactions
 if uploaded_file:
     doc_content = process_document(uploaded_file)
     st.write("Document Content:", doc_content)
