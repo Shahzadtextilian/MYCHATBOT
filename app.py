@@ -22,15 +22,18 @@ def query_groq_api(prompt):
     }
     data = {
         "prompt": prompt,
-        "max_tokens": 300,  # Adjust token limit as needed
+        "max_tokens": 300
     }
     try:
         response = requests.post(API_URL, json=data, headers=headers)
-        response.raise_for_status()  # Raise error for bad responses
+        response.raise_for_status()  # Raise an error for bad responses
+
         return response.json().get("choices", [{}])[0].get("text", "")
-    except requests.exceptions.RequestException as e:
-        st.error(f"API error: {e}")
-        return "I'm having trouble connecting to the server. Please try again later."
+    except requests.exceptions.HTTPError as http_err:
+        st.error(f"HTTP error: {http_err}")
+    except requests.exceptions.RequestException as req_err:
+        st.error(f"Request error: {req_err}")
+    return "I'm having trouble connecting to the server. Please try again later."
 
 # User input section
 user_input = st.text_input("You:", key="user_input")
@@ -38,7 +41,7 @@ user_input = st.text_input("You:", key="user_input")
 if st.button("Send") and user_input:
     # Send the user's input to the GROQ API
     bot_response = query_groq_api(user_input)
-    
+
     # Update chat history
     st.session_state.messages.append(("User", user_input))
     st.session_state.messages.append(("Bot", bot_response))
