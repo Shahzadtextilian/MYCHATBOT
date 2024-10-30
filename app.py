@@ -1,17 +1,34 @@
 import streamlit as st
-import os
+import requests
+from bs4 import BeautifulSoup
 from groq import Groq
 
 # Initialize Groq client using the API key from Streamlit secrets
-client = Groq(
-    api_key=st.secrets["GROQ_API_KEY"]
-)
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-def query_groq(prompt):
-    """Function to query Groq API with a user prompt."""
+def scrape_website(url):
+    """Scrapes text content from the given website URL."""
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Extract all text from <p> tags as example content for RAG.
+        paragraphs = [p.get_text() for p in soup.find_all('p')]
+        return " ".join(paragraphs)  # Combine all paragraphs into one text block
+    except Exception as e:
+        st.error(f"Failed to retrieve data from the website: {e}")
+        return ""
+
+def query_groq(prompt, context):
+    """Sends a query to Groq API with retrieved context."""
     try:
         response = client.chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
+            messages=[
+                {"role": "system", "content": "Use the following context for answering queries."},
+                {"role": "system", "content": context},
+                {"role": "user", "content": prompt}
+            ],
             model="llama3-8b-8192"
         )
         return response.choices[0].message.content
@@ -20,16 +37,21 @@ def query_groq(prompt):
 
 # Streamlit UI
 st.title("RAG System with Groq API")
-st.write("Ask a question, and we'll get the best answer for you using Groq!")
+st.write("Enter a website URL and ask your question!")
 
-# Input field for the user prompt
-user_input = st.text_input("Enter your query:", "")
+# Input field for website URL and user query
+website_url = st.text_input("Enter Website URL:", "")
+user_query = st.text_input("Enter Your Query:", "")
 
-# Button to trigger the API call
-if st.button("Generate Response"):
-    if user_input.strip():
-        with st.spinner("Fetching response..."):
-            response = query_groq(user_input)
-            st.text_area("Response from Groq:", response, height=200)
+# Button to scrape website and query Groq
+if st.button("Get Answer"):
+    if website_url.strip() and user_query.strip():
+        with st.spinner("Fetching data from website..."):
+            website_content = scrape_website(website_url)
+
+        if website_content:
+            with st.spinner("Generating response..."):
+                response = query_groq(user_query, website_content)
+                st.text_area("Response from Groq:", response, height=200)
     else:
-        st.warning("Please enter a valid query.")
+        st.warning("Please provide both a valid website URL and a query.")
