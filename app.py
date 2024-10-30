@@ -7,21 +7,21 @@ from groq import Groq
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 def scrape_website(url):
-    """Scrapes text content from the given website URL."""
+    """Scrapes and extracts key paragraphs from the website."""
     try:
         response = requests.get(url)
         response.raise_for_status()  # Raise an exception for HTTP errors
         soup = BeautifulSoup(response.content, "html.parser")
 
-        # Extract all text from <p> tags as example content for RAG.
-        paragraphs = [p.get_text() for p in soup.find_all('p')]
-        return " ".join(paragraphs)  # Combine all paragraphs into one text block
+        # Extract and limit the number of paragraphs (e.g., first 5)
+        paragraphs = [p.get_text() for p in soup.find_all('p')[:5]]
+        return " ".join(paragraphs)[:1500]  # Limit to 1500 characters
     except Exception as e:
         st.error(f"Failed to retrieve data from the website: {e}")
         return ""
 
 def query_groq(prompt, context):
-    """Sends a query to Groq API with retrieved context."""
+    """Sends a query to Groq API with optimized context."""
     try:
         response = client.chat.completions.create(
             messages=[
