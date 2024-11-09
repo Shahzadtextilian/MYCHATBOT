@@ -10,12 +10,35 @@ client = Groq(
 )
 
 # Streamlit UI layout
-st.title("Image Analysis Chatbot with LLaMA-3.2-90B")
-st.write("Upload an image, photo, or document for analysis.")
+st.title("Image Analysis and Text Chatbot ")
+st.write("Upload an image or enter text for analysis.")
 
-uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png", "pdf"])
+# Text input
+user_input = st.text_area("Enter text for analysis:")
 
-if uploaded_file is not None:
+# File uploader
+uploaded_file = st.file_uploader("Or upload an image", type=["jpg", "jpeg", "png", "pdf"])
+
+if user_input:
+    # Process text input
+    st.write("Processing the text for analysis...")
+
+    # Call the Groq API for text analysis
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": user_input,
+            }
+        ],
+        model="llama-3.2-90b-vision-preview",
+    )
+
+    # Display the response from the model
+    st.write("### Text Analysis Result")
+    st.write(chat_completion.choices[0].message.content)
+
+elif uploaded_file is not None:
     # Display the uploaded image
     image = Image.open(uploaded_file)
     st.image(image, caption="Uploaded Image.", use_column_width=True)
@@ -26,7 +49,7 @@ if uploaded_file is not None:
 
     st.write("Processing the image for analysis...")
 
-    # Call the Groq API for the model that can handle vision analysis
+    # Call the Groq API for image analysis
     chat_completion = client.chat.completions.create(
         messages=[
             {
@@ -38,8 +61,8 @@ if uploaded_file is not None:
     )
 
     # Display the response from the model
-    st.write("### Analysis Result")
+    st.write("### Image Analysis Result")
     st.write(chat_completion.choices[0].message.content)
 
 else:
-    st.write("Please upload an image to start analysis.")
+    st.write("Please enter text or upload an image to start analysis.")
