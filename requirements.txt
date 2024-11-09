@@ -1,4 +1,6 @@
 streamlit
-groq
+torch 
+transformers
+pillow 
 requests
-beautifulsoup4
+
