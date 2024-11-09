@@ -3,6 +3,10 @@ import requests
 import torch
 from PIL import Image
 from transformers import MllamaForConditionalGeneration, AutoProcessor
+from huggingface_hub import login
+
+# Replace 'your_hf_token' with your actual Hugging Face token
+login("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")
 
 # Load the model and processor
 model_id = "meta-llama/Llama-3.2-90B-Vision"
