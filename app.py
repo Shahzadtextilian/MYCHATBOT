@@ -67,8 +67,9 @@ if uploaded_file is not None:
                 if line:
                     decoded_line = line.decode("utf-8").strip()
 
-                    # Debugging output to show what is being received
-                    st.text(f"Received line: {decoded_line}")
+                    # Handle Server-Sent Events (SSE) prefix "data: "
+                    if decoded_line.startswith("data: "):
+                        decoded_line = decoded_line[len("data: "):]
 
                     # Skip control messages like [DONE] or empty lines
                     if decoded_line == "[DONE]" or not decoded_line:
@@ -83,7 +84,7 @@ if uploaded_file is not None:
                             # Update the Streamlit placeholder with the new text
                             response_placeholder.text(response_text)
                     except json.JSONDecodeError as json_error:
-                        st.warning(f"Non-JSON line received: {decoded_line}")
+                        st.warning(f"Error decoding JSON line: {decoded_line}")
                         st.warning(f"JSONDecodeError: {json_error}")
 
         except requests.exceptions.RequestException as e:
