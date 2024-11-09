@@ -1,20 +1,18 @@
 import streamlit as st
 import requests
 import base64
+import os
 import json
 
 # Set the NVIDIA API URL
 invoke_url = "https://ai.api.nvidia.com/v1/gr/meta/llama-3.2-90b-vision-instruct/chat/completions"
 stream = True
 
-import os
-
-# Access the API key from the environment variable
-api_key = os.getenv("NVIDIA_API_KEY")
+# Access the API key from Streamlit secrets
+api_key = st.secrets["NVIDIA_API_KEY"]
 
 if not api_key:
-    st.error("API key not found. Please set NVIDIA_API_KEY as an environment variable.")
-
+    st.error("API key not found in Streamlit secrets.")
 
 # Streamlit UI
 st.title("Image Analysis Chatbot with Llama-3.2-90B Vision Model")
@@ -30,17 +28,17 @@ if uploaded_file is not None:
     # Read the image and encode it in base64
     image_b64 = base64.b64encode(uploaded_file.read()).decode()
 
-    # Check image size (optional)
+    # Check image size
     if len(image_b64) >= 180_000:
         st.error("The uploaded image is too large. Please upload a smaller image.")
     else:
-        # Prepare the API request headers
+        # Prepare request headers
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Accept": "text/event-stream" if stream else "application/json"
         }
 
-        # Prepare the API payload
+        # Prepare the payload
         payload = {
             "model": 'meta/llama-3.2-90b-vision-instruct',
             "messages": [
@@ -55,27 +53,33 @@ if uploaded_file is not None:
             "stream": stream
         }
 
+        # Placeholder for streaming response
+        response_placeholder = st.empty()
+        response_text = ""
+
         # Send the API request
         try:
             response = requests.post(invoke_url, headers=headers, json=payload, stream=stream)
 
-            # Check the response status
+            # Check for successful response
             response.raise_for_status()
 
-            # Display the response
-            if stream:
-                st.write("Analyzing image... Please wait.")
-                analysis_result = ""
-                for line in response.iter_lines():
-                    if line:
-                        decoded_line = line.decode("utf-8").strip()
-                        if decoded_line:
-                            analysis_result += decoded_line + "\n"
-                st.text_area("Analysis Result:", analysis_result)
-            else:
-                result = response.json()
-                st.text_area("Analysis Result:", json.dumps(result, indent=2))
+            # Process the streaming response
+            st.write("Analyzing image... Please wait.")
+            for line in response.iter_lines():
+                if line:
+                    # Decode the line and parse JSON
+                    decoded_line = line.decode("utf-8").strip()
+                    if decoded_line != "[DONE]":
+                        try:
+                            data = json.loads(decoded_line)
+                            # Extract content from the response
+                            content = data['choices'][0]['delta'].get('content', '')
+                            response_text += content
+                            # Update the Streamlit placeholder with the new text
+                            response_placeholder.text(response_text)
+                        except json.JSONDecodeError:
+                            st.error("Error decoding the response stream.")
 
         except requests.exceptions.RequestException as e:
             st.error(f"An error occurred: {e}")
-
