@@ -1,4 +1,5 @@
 import os
+import base64
 import streamlit as st
 from groq import Groq
 from PIL import Image
@@ -19,10 +20,9 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption="Uploaded Image.", use_column_width=True)
 
-    # Optionally, process the image (convert to base64, etc.) if needed for the API
-    # Here, assume we send image data as part of the content (pseudo-encoded for example)
+    # Read and encode the image data to base64
     image_bytes = uploaded_file.read()
-    image_encoded = image_bytes.encode("base64")  # Replace this with the correct image encoding method
+    image_encoded = base64.b64encode(image_bytes).decode('utf-8')
 
     st.write("Processing the image for analysis...")
 
