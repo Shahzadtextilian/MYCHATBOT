@@ -1,57 +1,45 @@
+import os
 import streamlit as st
-import requests
-from bs4 import BeautifulSoup
 from groq import Groq
+from PIL import Image
 
-# Initialize Groq client using the API key from Streamlit secrets
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+# Set up the Groq client with API key
+client = Groq(
+    api_key=os.environ.get("GROQ_API_KEY"),
+)
 
-def scrape_website(url):
-    """Scrapes and extracts key paragraphs from the website."""
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        soup = BeautifulSoup(response.content, "html.parser")
+# Streamlit UI layout
+st.title("Image Analysis Chatbot with LLaMA-3.2-90B")
+st.write("Upload an image, photo, or document for analysis.")
 
-        # Extract and limit the number of paragraphs (e.g., first 5)
-        paragraphs = [p.get_text() for p in soup.find_all('p')[:5]]
-        return " ".join(paragraphs)[:1500]  # Limit to 1500 characters
-    except Exception as e:
-        st.error(f"Failed to retrieve data from the website: {e}")
-        return ""
+uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png", "pdf"])
 
-def query_groq(prompt, context):
-    """Sends a query to Groq API with optimized context."""
-    try:
-        response = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": "Use the following context for answering queries."},
-                {"role": "system", "content": context},
-                {"role": "user", "content": prompt}
-            ],
-            model="llama3-8b-8192"
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"Error: {str(e)}"
+if uploaded_file is not None:
+    # Display the uploaded image
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Uploaded Image.", use_column_width=True)
 
-# Streamlit UI
-st.title("RAG System with Groq API")
-st.write("Enter a website URL and ask your question!")
+    # Optionally, process the image (convert to base64, etc.) if needed for the API
+    # Here, assume we send image data as part of the content (pseudo-encoded for example)
+    image_bytes = uploaded_file.read()
+    image_encoded = image_bytes.encode("base64")  # Replace this with the correct image encoding method
 
-# Input field for website URL and user query
-website_url = st.text_input("Enter Website URL:", "")
-user_query = st.text_input("Enter Your Query:", "")
+    st.write("Processing the image for analysis...")
 
-# Button to scrape website and query Groq
-if st.button("Get Answer"):
-    if website_url.strip() and user_query.strip():
-        with st.spinner("Fetching data from website..."):
-            website_content = scrape_website(website_url)
+    # Call the Groq API for the model that can handle vision analysis
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": f"Analyze this image: {image_encoded}",
+            }
+        ],
+        model="llama-3.2-90b-vision-preview",
+    )
 
-        if website_content:
-            with st.spinner("Generating response..."):
-                response = query_groq(user_query, website_content)
-                st.text_area("Response from Groq:", response, height=200)
-    else:
-        st.warning("Please provide both a valid website URL and a query.")
+    # Display the response from the model
+    st.write("### Analysis Result")
+    st.write(chat_completion.choices[0].message.content)
+
+else:
+    st.write("Please upload an image to start analysis.")
