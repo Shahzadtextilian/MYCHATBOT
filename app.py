@@ -8,11 +8,8 @@ import json
 invoke_url = "https://ai.api.nvidia.com/v1/gr/meta/llama-3.2-90b-vision-instruct/chat/completions"
 stream = True
 
-# Access the API key from Streamlit secrets
-api_key = st.secrets["NVIDIA_API_KEY"]
-
-if not api_key:
-    st.error("API key not found in Streamlit secrets.")
+# Load the API key from environment variables or Streamlit secrets
+api_key = os.getenv("NVIDIA_API_KEY", "YOUR_API_KEY")
 
 # Streamlit UI
 st.title("Image Analysis Chatbot with Llama-3.2-90B Vision Model")
@@ -68,18 +65,22 @@ if uploaded_file is not None:
             st.write("Analyzing image... Please wait.")
             for line in response.iter_lines():
                 if line:
-                    # Decode the line and parse JSON
                     decoded_line = line.decode("utf-8").strip()
-                    if decoded_line != "[DONE]":
-                        try:
-                            data = json.loads(decoded_line)
-                            # Extract content from the response
-                            content = data['choices'][0]['delta'].get('content', '')
+
+                    # Skip control messages like [DONE] or empty lines
+                    if decoded_line == "[DONE]" or not decoded_line:
+                        continue
+
+                    # Try to parse the JSON line
+                    try:
+                        data = json.loads(decoded_line)
+                        content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                        if content:
                             response_text += content
                             # Update the Streamlit placeholder with the new text
                             response_placeholder.text(response_text)
-                        except json.JSONDecodeError:
-                            st.error("Error decoding the response stream.")
+                    except json.JSONDecodeError:
+                        st.warning("Received a non-JSON line. Skipping.")
 
         except requests.exceptions.RequestException as e:
             st.error(f"An error occurred: {e}")
