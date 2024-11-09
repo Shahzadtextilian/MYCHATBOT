@@ -1,6 +1,6 @@
-streamlit
-torch 
+torch
 transformers
-pillow 
+accelerate
+pillow
 requests
-
+streamlit
