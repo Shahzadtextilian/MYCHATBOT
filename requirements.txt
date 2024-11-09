@@ -4,3 +4,5 @@ accelerate
 pillow
 requests
 streamlit
+huggingface-hub
+
